@@ -1,9 +1,11 @@
 import { Request, Response } from "express";
 import Post from "../models/Post";
+import Author from "../models/Author";
+import Tag from "../models/Tag";
 
 const getAllPosts = async (req: Request, res: Response) => {
     try {
-        const posts = await Post.find();
+        const posts = await Post.find().populate("author").populate("tags");
         res.status(200).json(posts);
     } catch (error) {
         res.status(500).json({ message: "Error fetching posts" });
@@ -13,7 +15,15 @@ const getAllPosts = async (req: Request, res: Response) => {
 
 const createPost = async (req: Request, res: Response) => {
     try {
-        const post = await Post.create(req.body);
+        const { authorId, ...postData } = req.body;
+        const post = await Post.create({ ...postData, author: authorId });
+        
+        if (authorId) {
+            await Author.findByIdAndUpdate(authorId, {
+                $push: { posts: post._id }
+            });
+        }
+        
         res.status(201).json(post);
     } catch (error) {
         res.status(500).json({ message: "Error creating post" });
@@ -47,4 +57,24 @@ const deletePost = async (req: Request, res: Response) => {
     }
 };
 
-export { getAllPosts, createPost, getPostById, updatePost, deletePost };
+const addTagToPost = async (req: Request, res: Response) => {
+    try {
+        const { postId, tagId } = req.params;
+
+        // Add tagId to post.tags
+        await Post.findByIdAndUpdate(postId, {
+            $push: { tags: tagId }
+        });
+
+        // Add postId to tag.posts
+        await Tag.findByIdAndUpdate(tagId, {
+            $push: { posts: postId }
+        });
+
+        res.status(200).json({ message: "Tag added to post successfully" });
+    } catch (error) {
+        res.status(500).json({ message: "Error adding tag to post" });
+    }
+};
+
+export { getAllPosts, createPost, getPostById, updatePost, deletePost, addTagToPost };

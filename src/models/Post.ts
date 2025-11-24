@@ -9,7 +9,14 @@ const postSchema = new Schema({
         type: String,
         required: true,
     },
-
+    author: {
+        type: Schema.Types.ObjectId,
+        ref: "Author",
+    },
+    tags: [{
+        type: Schema.Types.ObjectId,
+        ref: "Tag",
+    }],
 });
 
 const Post = model("Post", postSchema);
