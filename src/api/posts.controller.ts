@@ -16,6 +16,12 @@ const getAllPosts = async (req: Request, res: Response) => {
 const createPost = async (req: Request, res: Response) => {
     try {
         const { authorId, ...postData } = req.body;
+        
+        // Check if file was uploaded and assign path to image
+        if (req.file) {
+            postData.image = `/media/${req.file.filename}`;
+        }
+        
         const post = await Post.create({ ...postData, author: authorId });
         
         if (authorId) {
